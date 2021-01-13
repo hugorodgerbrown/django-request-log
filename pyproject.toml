@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "my-app"
+name = "django-request-log"
 version = "0.1.0"
-description = "Project template for Django app, using Poetry."
+description = "Django utils for parsing and recording HttpRequests."
 license = "MIT"
 authors = ["YunoJuno <code@yunojuno.com>"]
 maintainers = ["YunoJuno <code@yunojuno.com>"]
@@ -22,7 +22,7 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
 ]
-packages = [{ include = "my_app" }]
+packages = [{ include = "request_log" }]
 
 [tool.poetry.dependencies]
 python = "^3.7"
