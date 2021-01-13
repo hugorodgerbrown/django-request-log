@@ -10,7 +10,6 @@ from request_log.models import RequestLog
 
 
 class DebugRequestLogMiddleware:
-
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
         if not settings.DEBUG:
             raise MiddlewareNotUsed("DebugRequestLogMiddleware not used")

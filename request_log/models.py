@@ -89,18 +89,26 @@ class RequestParser:
 
 
 class AbstractRequestLog(models.Model):
-    """Abstract base model for storing request info."""
+    """
+    Abstract base model for storing request info.
+
+    You should use this class if you want to include all of the fields in this
+    class in your own model (and related database table).
+
+    If you want to centralise your logs, use the RequestLog model class instead.
+
+    """
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True
     )
     session_key = models.CharField(blank=True, max_length=40)
     http_method = models.CharField(max_length=10)
-    http_user_agent = models.TextField()
-    http_referer = models.TextField()
-    request_path = models.URLField()
-    remote_addr = models.CharField(max_length=100)
-    query_string = models.TextField(blank=True)
+    http_user_agent = models.TextField(default="")
+    http_referer = models.TextField(default="")
+    request_path = models.URLField(default="")
+    query_string = models.TextField(blank=True, default="")
+    remote_addr = models.CharField(max_length=100, default="")
     timestamp = models.DateTimeField(default=tz_now)
 
     class Meta:
@@ -115,21 +123,6 @@ class AbstractRequestLog(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> RequestLog:
         super().save(*args, **kwargs)
         return self
-
-    @classmethod
-    def parse(cls, request: HttpRequest) -> RequestLog:
-        """Build (unsaved) RequestLog object from an HttpRequest."""
-        parser = RequestParser(request)
-        return RequestLog(
-            user=parser.user,
-            session_key=parser.session_key,
-            http_method=parser.http_method,
-            request_uri=parser.request_path,
-            query_string=parser.query_string,
-            http_user_agent=parser.http_user_agent,
-            http_referer=parser.http_referer,
-            remote_addr=parser.remote_addr,
-        )
 
 
 class RequestLogManager(models.Manager):
@@ -148,3 +141,18 @@ class RequestLog(AbstractRequestLog):
     )
 
     objects = RequestLogManager()
+
+    @classmethod
+    def parse(cls, request: HttpRequest) -> RequestLog:
+        """Build (unsaved) RequestLog object from an HttpRequest."""
+        parser = RequestParser(request)
+        return RequestLog(
+            user=parser.user,
+            session_key=parser.session_key,
+            http_method=parser.http_method,
+            request_uri=parser.request_path,
+            query_string=parser.query_string,
+            http_user_agent=parser.http_user_agent,
+            http_referer=parser.http_referer,
+            remote_addr=parser.remote_addr,
+        )

@@ -9,13 +9,7 @@ from .models import RequestLog
 class RequestLogAdmin(admin.ModelAdmin):
     """Admin model for RequestLog objects."""
 
-    list_display = (
-        "user",
-        "http_method",
-        "request_uri",
-        "query_string",
-        "timestamp"
-    )
+    list_display = ("user", "http_method", "request_path", "query_string", "timestamp")
     readonly_fields = (
         "user",
         "session_key",
