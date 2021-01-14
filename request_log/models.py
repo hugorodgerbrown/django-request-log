@@ -120,28 +120,30 @@ class AbstractRequestLog(models.Model):
     def __repr__(self) -> str:
         return super().__str__()
 
-    def save(self, *args: Any, **kwargs: Any) -> RequestLog:
+    def save(self, *args: Any, **kwargs: Any) -> AbstractRequestLog:
         super().save(*args, **kwargs)
         return self
+
+    def parse_request(self, request: HttpRequest) -> None:
+        """Set object properties from a request."""
+        parser = RequestParser(request)
+        self.user = parser.user
+        self.session_key = parser.session_key
+        self.http_method = parser.http_method
+        self.request_path = parser.request_path
+        self.query_string = parser.query_string
+        self.http_user_agent = parser.http_user_agent
+        self.http_referer = parser.http_referer
+        self.remote_addr = parser.remote_addr
 
 
 class RequestLogManager(models.Manager):
     def create_log(
         self, request: HttpRequest, category: str = "", label: str = ""
     ) -> RequestLog:
-        parser = RequestParser(request)
-        return self.create(
-            user=parser.user,
-            session_key=parser.session_key,
-            http_method=parser.http_method,
-            request_path=parser.request_path,
-            query_string=parser.query_string,
-            http_user_agent=parser.http_user_agent,
-            http_referer=parser.http_referer,
-            remote_addr=parser.remote_addr,
-            category=category,
-            label=label,
-        )
+        log = RequestLog(category=category, label=label)
+        log.parse_request(request)
+        return log.save()
 
 
 class RequestLog(AbstractRequestLog):
