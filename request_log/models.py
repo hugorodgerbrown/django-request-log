@@ -48,7 +48,7 @@ class RequestParser:
         is the first one in the chain.
 
         """
-        x_forwarded_for = request.headers.get("X-Forwarded-For", "")
+        x_forwarded_for = request.META.get("X_FORWARDED_FOR", "")
         if x_forwarded_for:
             return x_forwarded_for.split(",")[0]
         return request.META.get("REMOTE_ADDR", "")
@@ -126,8 +126,22 @@ class AbstractRequestLog(models.Model):
 
 
 class RequestLogManager(models.Manager):
-    def log_request(self, request: HttpRequest) -> RequestLog:
-        return RequestLog.parse(request).save()
+    def create_log(
+        self, request: HttpRequest, category: str = "", label: str = ""
+    ) -> RequestLog:
+        parser = RequestParser(request)
+        return self.create(
+            user=parser.user,
+            session_key=parser.session_key,
+            http_method=parser.http_method,
+            request_path=parser.request_path,
+            query_string=parser.query_string,
+            http_user_agent=parser.http_user_agent,
+            http_referer=parser.http_referer,
+            remote_addr=parser.remote_addr,
+            category=category,
+            label=label,
+        )
 
 
 class RequestLog(AbstractRequestLog):
@@ -142,17 +156,19 @@ class RequestLog(AbstractRequestLog):
 
     objects = RequestLogManager()
 
-    @classmethod
-    def parse(cls, request: HttpRequest) -> RequestLog:
-        """Build (unsaved) RequestLog object from an HttpRequest."""
-        parser = RequestParser(request)
-        return RequestLog(
-            user=parser.user,
-            session_key=parser.session_key,
-            http_method=parser.http_method,
-            request_uri=parser.request_path,
-            query_string=parser.query_string,
-            http_user_agent=parser.http_user_agent,
-            http_referer=parser.http_referer,
-            remote_addr=parser.remote_addr,
+    def __str__(self) -> str:
+        if self.user:
+            return (
+                f"Logged request by {self.user} to '{self.request_path[:100]}' "
+                f"at {self.timestamp}"
+            )
+        return (
+            f"Logged anonymous request to '{self.request_path[:100]}' "
+            f"at {self.timestamp}"
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"<RequestLog id={self.id} user_id={self.user_id} "
+            f"timestamp='self.timestamp'>"
         )
